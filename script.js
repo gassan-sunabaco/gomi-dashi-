@@ -1,29 +1,62 @@
-const calendarDiv = document.getElementById("calendar");
+const calendar = document.getElementById("calendar");
+const monthLabel = document.getElementById("monthLabel");
+const prevBtn = document.getElementById("prevMonth");
+const nextBtn = document.getElementById("nextMonth");
 const notifyBtn = document.getElementById("notifyBtn");
-let gomiData = {};
 
-// JSONを読み込む
+let gomiData = {};
+let currentDate = new Date();
+
+// JSON読み込み
 fetch("gomi.json")
-  .then(response => response.json())
+  .then(res => res.json())
   .then(data => {
     gomiData = data;
-    renderCalendar();
+    renderCalendar(currentDate);
   });
 
-// カレンダー表示
-function renderCalendar() {
-  calendarDiv.innerHTML = "";
-  const allDates = Object.keys(gomiData).sort();
-  allDates.forEach(dateStr => {
-    const dayDiv = document.createElement("div");
-    dayDiv.className = "day";
-    const kind = gomiData[dateStr];
-    dayDiv.textContent = `${dateStr.split("-")[2]}日\n${kind}`;
-    if (kind === "燃えるごみ") dayDiv.classList.add("burnable");
-    if (kind === "資源ごみ") dayDiv.classList.add("recyclable");
-    calendarDiv.appendChild(dayDiv);
-  });
+// カレンダー描画
+function renderCalendar(date) {
+  const year = date.getFullYear();
+  const month = date.getMonth();
+  monthLabel.textContent = `${year}年${month + 1}月`;
+
+  const firstDay = new Date(year, month, 1).getDay();
+  const lastDate = new Date(year, month + 1, 0).getDate();
+
+  // 曜日ヘッダー
+  let html = "<tr>";
+  const weekdays = ["日","月","火","水","木","金","土"];
+  weekdays.forEach(d => html += `<th>${d}</th>`);
+  html += "</tr><tr>";
+
+  // 空セル
+  for (let i = 0; i < firstDay; i++) html += "<td></td>";
+
+  for (let day = 1; day <= lastDate; day++) {
+    const dateStr = `${year}-${String(month+1).padStart(2,"0")}-${String(day).padStart(2,"0")}`;
+    let classes = "";
+    if (gomiData[dateStr] === "燃えるごみ") classes = "burnable";
+    if (gomiData[dateStr] === "資源ごみ") classes = "recyclable";
+    html += `<td class="${classes}">${day}<br>${gomiData[dateStr] || ""}</td>`;
+
+    // 土曜で改行
+    if ((day + firstDay) % 7 === 0) html += "</tr><tr>";
+  }
+
+  html += "</tr>";
+  calendar.innerHTML = html;
 }
+
+// 月切替
+prevBtn.addEventListener("click", () => {
+  currentDate.setMonth(currentDate.getMonth() - 1);
+  renderCalendar(currentDate);
+});
+nextBtn.addEventListener("click", () => {
+  currentDate.setMonth(currentDate.getMonth() + 1);
+  renderCalendar(currentDate);
+});
 
 // リマインド機能
 notifyBtn.addEventListener("click", () => {
@@ -48,8 +81,6 @@ function checkRemind() {
   const dd = String(tomorrow.getDate()).padStart(2, "0");
   const key = `${yyyy}-${mm}-${dd}`;
   if (gomiData[key]) {
-    new Notification(`明日はごみの日です！`, {
-      body: `${gomiData[key]}`
-    });
+    new Notification(`明日はごみの日です！`, { body: `${gomiData[key]}` });
   }
 }
