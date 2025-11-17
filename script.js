@@ -5,7 +5,7 @@ const nextBtn = document.getElementById("nextMonth");
 const notifyBtn = document.getElementById("notifyBtn");
 
 let gomiData = {};
-let currentDate = new Date();
+let currentDate = new Date("2025-11-01"); // 初期表示は11月
 
 // JSON読み込み
 fetch("gomi.json")
@@ -24,13 +24,12 @@ function renderCalendar(date) {
   const firstDay = new Date(year, month, 1).getDay();
   const lastDate = new Date(year, month + 1, 0).getDate();
 
-  // 曜日ヘッダー
   let html = "<tr>";
   const weekdays = ["日","月","火","水","木","金","土"];
   weekdays.forEach(d => html += `<th>${d}</th>`);
   html += "</tr><tr>";
 
-  // 空セル
+  // 空白セル
   for (let i = 0; i < firstDay; i++) html += "<td></td>";
 
   for (let day = 1; day <= lastDate; day++) {
@@ -38,10 +37,10 @@ function renderCalendar(date) {
     let classes = "";
     if (gomiData[dateStr] === "燃えるごみ") classes = "burnable";
     if (gomiData[dateStr] === "資源ごみ") classes = "recyclable";
+
     html += `<td class="${classes}">${day}<br>${gomiData[dateStr] || ""}</td>`;
 
-    // 土曜で改行
-    if ((day + firstDay) % 7 === 0) html += "</tr><tr>";
+    if ((day + firstDay) % 7 === 0 && day !== lastDate) html += "</tr><tr>";
   }
 
   html += "</tr>";
@@ -58,7 +57,7 @@ nextBtn.addEventListener("click", () => {
   renderCalendar(currentDate);
 });
 
-// リマインド機能
+// 前日リマインド機能
 notifyBtn.addEventListener("click", () => {
   if (!("Notification" in window)) {
     alert("このブラウザは通知に対応していません");
